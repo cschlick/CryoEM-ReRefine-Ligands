@@ -1,1 +1,0 @@
-FAILED: /net/cci/share/cryoem/maps_and_models/5zap_6907: .pkl occurrences != 1
