@@ -95,8 +95,9 @@ def ligands_map_model_cc(entry):
 						entry.ligands	# a list of group_args objects for each ligand found
 						entry.ligands[0].five_cc_obj	# the cross correlation information
 	"""
-	model_path = entry.local_model_file
-	map_path = entry.local_map_file
+	print(entry)
+	model_path = entry.model_file
+	map_path = entry.map_file
 
 	dm = DataManager()
 	dm.process_model_file(model_path)
