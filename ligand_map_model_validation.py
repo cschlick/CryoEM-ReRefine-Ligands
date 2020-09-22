@@ -8,6 +8,7 @@ from mmtbx.maps.correlation import five_cc
 from multiprocessing import Pool
 import argparse
 import logging
+import requests
 
 """
 This script contains functions for:
@@ -105,9 +106,10 @@ def ligands_map_model_cc(entry):
 
 	mm = dm.get_real_map()
 	model = dm.get_model()
-	entry.add(key="has_ligands",value=False)
-	if len(model.composition()._result.other_cnts)>0:
-		entry.has_ligands = True
+	composition = model.composition()
+	entry.add(key="composition", value=composition)
+	entry.add(key="has_ligands",value=(len(composition._result.other_cnts)>0))
+
 	if entry.has_ligands:
 		if hasattr(entry, "output_directory"):
 			entry_output_path = os.path.join(entry.output_directory, entry.entry_id)
@@ -158,7 +160,7 @@ def ligands_map_model_cc(entry):
 		entry.add(key="ligands", value=ligand_model_entries)
 		if hasattr(entry, "output_directory"):
 			entry_pkl_path = os.path.join(entry.entry_output_directory,
-																		"entry"+entry.entry_id+".pkl")
+																		"entry_"+entry.entry_id+".pkl")
 			with open(entry_pkl_path, "wb") as fh:
 				pickle.dump(entry, fh)
 
@@ -230,6 +232,7 @@ def read_data_directory(input_directory):
 
 def process_data_directory(input_directory,
 											output_directory=None,
+											do_one_entry=None,
 											overwrite=False,
 											nproc=1):
 
@@ -246,10 +249,10 @@ def process_data_directory(input_directory,
 			entries = [entry for entry in entries if entry.entry_id in
 								 entry_ids_to_process]
 
+	if do_one_entry is not None:
+		entries = [entry for entry in entries if entry.entry_id == do_one_entry]
 
-
-	entries = entries[50:60] # dbg
-	if args.nproc ==1:
+	if nproc ==1:
 		results = []
 		for entry in entries:
 			r = ligands_map_model_cc(entry)
@@ -277,6 +280,10 @@ if __name__ == '__main__':
 	parser.add_argument('--overwrite',
 											help='If false (default), only process unfinished',
 											default=False)
+	parser.add_argument('--do_one_entry',
+											help="Provide a single entry code.",
+											default=False)
+
 	args, extras = parser.parse_known_args()
 
 	args.input_directory = os.path.abspath(args.input_directory)
