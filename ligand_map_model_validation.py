@@ -86,6 +86,7 @@ def ligands_map_model_cc(entry):
 
 					May contain folling properties:
 						entry.output_directory
+						entry.has_ligands
 
 	Returns
 	-------
@@ -103,53 +104,58 @@ def ligands_map_model_cc(entry):
 
 	mm = dm.get_real_map()
 	model = dm.get_model()
-	ligand_model_entries = extract_ligand_models(model)
+	entry.add(key="has_ligands",value=False)
+	if len(model.get_composition()._result.other_cnts)>0:
+		entry.has_ligands = True
+	if entry.has_ligands:
+		ligand_model_entries = extract_ligand_models(model)
 
-	for ligand_entry in ligand_model_entries:
+		for ligand_entry in ligand_model_entries:
 
-		map_model_manager = MapModelManager(map_manager=mm.deep_copy(),
-																				model=ligand_entry.model)
-		boxed_mmm = map_model_manager.extract_all_maps_around_model()
-		ligand_mm = boxed_mmm.map_manager()
-		ligand_model = boxed_mmm.model()
+			map_model_manager = MapModelManager(map_manager=mm.deep_copy(),
+																					model=ligand_entry.model)
+			boxed_mmm = map_model_manager.extract_all_maps_around_model()
+			ligand_mm = boxed_mmm.map_manager()
+			ligand_model = boxed_mmm.model()
 
-		five_cc_obj = five_cc(
-			ligand_mm.map_data(),
-			ligand_model.get_xray_structure(),
-			entry.resolution,
-			box=None,
-			keep_map_calc=False,
-			compute_cc_box=False,
-			compute_cc_image=False,
-			compute_cc_mask=True,
-			compute_cc_volume=False,
-			compute_cc_peaks=False)
+			five_cc_obj = five_cc(
+				ligand_mm.map_data(),
+				ligand_model.get_xray_structure(),
+				entry.resolution,
+				box=None,
+				keep_map_calc=False,
+				compute_cc_box=False,
+				compute_cc_image=False,
+				compute_cc_mask=True,
+				compute_cc_volume=False,
+				compute_cc_peaks=False)
 
-		if hasattr(entry,"output_directory"):
-			entry_output_path = os.path.join(entry.output_directory, entry.entry_id)
-			if not os.path.exists(entry_output_path):
-				os.mkdir(entry_output_path)
-			ligand_model_path = os.path.join(entry_output_path,
-																			 "ligand_" + ligand_entry.ligand_id + ".pdb")
-			ligand_map_path = os.path.join(entry_output_path,
-																		 "ligand_" + ligand_entry.ligand_id + ".map")
+			if hasattr(entry,"output_directory"):
+				entry_output_path = os.path.join(entry.output_directory, entry.entry_id)
+				if not os.path.exists(entry_output_path):
+					os.mkdir(entry_output_path)
+				ligand_model_path = os.path.join(entry_output_path,
+																				 "ligand_" + ligand_entry.ligand_id + ".pdb")
+				ligand_map_path = os.path.join(entry_output_path,
+																			 "ligand_" + ligand_entry.ligand_id + ".map")
 
-			ligand_entry.add(key="ligand_model_path", value=ligand_model_path)
-			ligand_entry.add(key="ligand_map_path", value=ligand_map_path)
+				ligand_entry.add(key="ligand_model_path", value=ligand_model_path)
+				ligand_entry.add(key="ligand_map_path", value=ligand_map_path)
 
-			boxed_mmm.write_map(ligand_map_path)
-			boxed_mmm.write_model(ligand_model_path)
+				boxed_mmm.write_map(ligand_map_path)
+				boxed_mmm.write_model(ligand_model_path)
 
-			five_cc_pkl_path = os.path.join(entry_output_path, "five_cc_object.pkl")
-			ligand_entry.add(key="five_cc_pkl_path", value=five_cc_pkl_path)
-			with open(five_cc_pkl_path, "wb") as fh:
-				pickle.dump(five_cc_obj, fh)
+				five_cc_pkl_path = os.path.join(entry_output_path, "five_cc_object.pkl")
+				ligand_entry.add(key="five_cc_pkl_path", value=five_cc_pkl_path)
+				with open(five_cc_pkl_path, "wb") as fh:
+					pickle.dump(five_cc_obj, fh)
 
-		ligand_entry.add(key="five_cc", value=five_cc_obj)
-		delattr(ligand_entry,"model") #for multiprocessing, model cannot be pickled
+			ligand_entry.add(key="five_cc", value=five_cc_obj)
+			delattr(ligand_entry,"model") #for multiprocessing, model cannot be pickled
 
-	entry.add(key="ligands", value=ligand_model_entries)
+		entry.add(key="ligands", value=ligand_model_entries)
 	return entry
+
 
 
 def process_directory(input_directory,nproc=2,output_directory=None,
@@ -203,14 +209,12 @@ def process_directory(input_directory,nproc=2,output_directory=None,
 			else:
 				entries.append(group_args)
 
+
 	
-        #p = Pool(nproc)
-	#results = p.map(ligands_map_model_cc, entries)
-	results = []
-        for entry in entries[:2]:
-          r = ligands_map_model_cc(entry)
-          results.append(r)
-        return results
+	p = Pool(nproc)
+	results = p.map(ligands_map_model_cc, entries)
+
+	return results
 
 if __name__ == '__main__':
 
@@ -233,6 +237,5 @@ if __name__ == '__main__':
 	except:
 		args.nproc = 2
 
-	os.chdir("Notebooks/") # debug
 	process_directory(**vars(args))
 
