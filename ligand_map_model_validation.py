@@ -248,7 +248,6 @@ def process_data_directory(input_directory,
 			entry_ids_to_process = set(entry_ids).difference(output_contents)
 			entries = [entry for entry in entries if entry.entry_id in
 								 entry_ids_to_process]
-	print(do_one_entry)
 	if do_one_entry is not None:
 		entries = [entry for entry in entries if entry.entry_id == do_one_entry]
 
@@ -282,7 +281,7 @@ if __name__ == '__main__':
 											default=False)
 	parser.add_argument('--do_one_entry',
 											help="Provide a single entry code.",
-											default=False)
+											default=None)
 
 	args, extras = parser.parse_known_args()
 
