@@ -223,7 +223,6 @@ def process_directory(input_directory,nproc=2,output_directory=None,
 	if nproc ==1:
 		results = []
 		for entry in entries:
-			print(entry)
 			r = ligands_map_model_cc(entry)
 			results.append(r)
 	else:
