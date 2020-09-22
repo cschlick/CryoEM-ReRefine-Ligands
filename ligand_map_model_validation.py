@@ -238,7 +238,10 @@ def process_directory(input_directory,nproc=2,output_directory=None,
 	return results
 
 if __name__ == '__main__':
-	logging.basicConfig(filename='ligand_map_model_validation.log',
+	logfilepath = 'ligand_map_model_validation.log'
+	if os.path.exists(logfilepath):
+		os.remove(logfilepath)
+	logging.basicConfig(filename=logfilepath,
 											level=logging.DEBUG)
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--input_directory', help='Directory of PDB/EMDB '
