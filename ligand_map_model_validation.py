@@ -20,9 +20,13 @@ containing information related to a pair of PDB/EMDB depositions
 
 	 Usage
 	-------
+	ligand_entries = extract_ligand_models(model) 
 	
+	# ligand_entries is a list of group_args objects containing ligand models
 	
-	
+	for ligand_entry in ligand_entries:
+	  ligand_entry = ligands_map_model_cc(ligand_entry) 
+	  # calculate CCmask, store result in the same group_args object
 	
 
 
@@ -81,7 +85,6 @@ def extract_ligand_models(model, desired_hetcodes=[], ignored_hetcodes=["UNK"]):
 			ligand_entries = []
 
 	return ligand_entries
-
 
 def ligands_map_model_cc(entry):
 	"""
@@ -182,9 +185,6 @@ def ligands_map_model_cc(entry):
 							 "\n\n")
 	return entry
 
-
-
-
 def read_data_directory(input_directory):
 	"""
 
@@ -195,14 +195,14 @@ def read_data_directory(input_directory):
 										Expects one folder for each entry, and a pickle object in the directory containing a libtbx.group_args object.
 										This in turn points to a map file, model file, and contains the resolution.
 
-	nproc	:	The number of entries to process in parallel
-	output_directory : The location to (optionally) write out ligand maps and
-										 ligand models
 
 	Returns
 	-------
-	results	: a list of libtbx.group_args objects, including CCmask
-										information for each ligand model
+	entries	: a list of libtbx.group_args objects containing:
+					entry.map_file
+					entry.model_file
+					entry.resolution
+					etc
 	"""
 
 	entry_ids = [entry for entry in os.listdir(input_directory) if
@@ -244,13 +244,33 @@ def read_data_directory(input_directory):
 
 	return entries_with_files
 
-
-
 def process_data_directory(input_directory,
 											output_directory=None,
 											do_one_entry=None,
 											overwrite=False,
 											nproc=1):
+	"""
+
+	Parameters
+	----------
+	input_directory	:	The directory of pdb/emdb entries.
+										On the cci cluster:/net/cci/share/cryoem/maps_and_models/
+										Expects one folder for each entry, and a pickle object in the directory containing a libtbx.group_args object.
+										This in turn points to a map file, model file, and contains the resolution.
+
+	output_directory : optional, the location to write maps and models to
+	do_one_entry	: string, optional. Process a single entry_id, ie. 6f1u_4169
+	overwrite			: bool, if existing results are found, overwrite them
+	nproc					: if nproc >1, will use multiprocessing to parallelize
+
+
+	Returns
+	-------
+	results	: a list of libtbx.group_args objects containing:
+						result.ligands (a list of group_args objects)
+						result.ligands[0].five_cc_obj (a mmtbx.map.correlation.five_cc
+						object containing CCmask results)
+	"""
 
 	entries = read_data_directory(input_directory)
 	if output_directory is not None:
@@ -276,8 +296,6 @@ def process_data_directory(input_directory,
 		p = Pool(args.nproc)
 		results = p.map(ligands_map_model_cc, entries)
 	return results
-
-
 
 if __name__ == '__main__':
 	logfilepath = 'ligand_map_model_validation.log'
