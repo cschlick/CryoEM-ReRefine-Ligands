@@ -118,60 +118,65 @@ def ligands_map_model_cc(entry):
 	composition = model.composition()
 	entry.add(key="composition", value=composition)
 	entry.add(key="has_ligands",value=(len(composition._result.other_cnts)>0))
-
-	if entry.has_ligands:
-		if hasattr(entry, "output_directory"):
-			entry_output_path = os.path.join(entry.output_directory, entry.entry_id)
-			if not os.path.exists(entry_output_path):
-				os.mkdir(entry_output_path)
-			entry.add(key="entry_output_directory",value=entry_output_path)
-
-		ligand_model_entries = extract_ligand_models(model)
-
-		for ligand_entry in ligand_model_entries:
-
-			map_model_manager = MapModelManager(map_manager=mm.deep_copy(),
-																					model=ligand_entry.model,
-																					ignore_symmetry_conflicts=True)
-			boxed_mmm = map_model_manager.extract_all_maps_around_model()
-			ligand_mm = boxed_mmm.map_manager()
-			ligand_model = boxed_mmm.model()
-
-			five_cc_obj = five_cc(
-				ligand_mm.map_data(),
-				ligand_model.get_xray_structure(),
-				entry.resolution,
-				box=None,
-				keep_map_calc=False,
-				compute_cc_box=False,
-				compute_cc_image=False,
-				compute_cc_mask=True,
-				compute_cc_volume=False,
-				compute_cc_peaks=False)
-
-			if hasattr(entry,"output_directory"):
-
-				ligand_model_path = os.path.join(entry.entry_output_directory,
-																				 "ligand_" + ligand_entry.ligand_id + ".pdb")
-				ligand_map_path = os.path.join(entry.entry_output_directory,
-																			 "ligand_" + ligand_entry.ligand_id + ".map")
-
-				ligand_entry.add(key="ligand_model_path", value=ligand_model_path)
-				ligand_entry.add(key="ligand_map_path", value=ligand_map_path)
-
-				boxed_mmm.write_map(ligand_map_path)
-				boxed_mmm.write_model(ligand_model_path)
-
-
-			ligand_entry.add(key="five_cc", value=five_cc_obj)
-			delattr(ligand_entry,"model") #for multiprocessing, model cannot be pickled
-
-		entry.add(key="ligands", value=ligand_model_entries)
-		if hasattr(entry, "output_directory"):
-			entry_pkl_path = os.path.join(entry.entry_output_directory,
-																		"entry_"+entry.entry_id+".pkl")
-			with open(entry_pkl_path, "wb") as fh:
-				pickle.dump(entry, fh)
+	try:
+		if entry.has_ligands:
+			if hasattr(entry, "output_directory"):
+				entry_output_path = os.path.join(entry.output_directory, entry.entry_id)
+				if not os.path.exists(entry_output_path):
+					os.mkdir(entry_output_path)
+				entry.add(key="entry_output_directory",value=entry_output_path)
+	
+			ligand_model_entries = extract_ligand_models(model)
+	
+			for ligand_entry in ligand_model_entries:
+	
+				map_model_manager = MapModelManager(map_manager=mm.deep_copy(),
+																						model=ligand_entry.model,
+																						ignore_symmetry_conflicts=True)
+				boxed_mmm = map_model_manager.extract_all_maps_around_model()
+				ligand_mm = boxed_mmm.map_manager()
+				ligand_model = boxed_mmm.model()
+	
+				five_cc_obj = five_cc(
+					ligand_mm.map_data(),
+					ligand_model.get_xray_structure(),
+					entry.resolution,
+					box=None,
+					keep_map_calc=False,
+					compute_cc_box=False,
+					compute_cc_image=False,
+					compute_cc_mask=True,
+					compute_cc_volume=False,
+					compute_cc_peaks=False)
+	
+				if hasattr(entry,"output_directory"):
+	
+					ligand_model_path = os.path.join(entry.entry_output_directory,
+																					 "ligand_" + ligand_entry.ligand_id + ".pdb")
+					ligand_map_path = os.path.join(entry.entry_output_directory,
+																				 "ligand_" + ligand_entry.ligand_id + ".map")
+	
+					ligand_entry.add(key="ligand_model_path", value=ligand_model_path)
+					ligand_entry.add(key="ligand_map_path", value=ligand_map_path)
+	
+					boxed_mmm.write_map(ligand_map_path)
+					boxed_mmm.write_model(ligand_model_path)
+	
+	
+				ligand_entry.add(key="five_cc", value=five_cc_obj)
+				delattr(ligand_entry,"model") #for multiprocessing, model cannot be pickled
+	
+			entry.add(key="ligands", value=ligand_model_entries)
+			if hasattr(entry, "output_directory"):
+				entry_pkl_path = os.path.join(entry.entry_output_directory,
+																			"entry_"+entry.entry_id+".pkl")
+				with open(entry_pkl_path, "wb") as fh:
+					pickle.dump(entry, fh)
+					
+	except:
+		#entry.add(key="failed_ligands_map_model_cc",value=True)
+		logging.info("ligands_map_model_cc() failed for entry "+str(entry)+"\n\n")
+					
 
 	return entry
 
