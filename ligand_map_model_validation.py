@@ -109,6 +109,12 @@ def ligands_map_model_cc(entry):
 	if len(model.composition()._result.other_cnts)>0:
 		entry.has_ligands = True
 	if entry.has_ligands:
+		if hasattr(entry, "output_directory"):
+			entry_output_path = os.path.join(entry.output_directory, entry.entry_id)
+			if not os.path.exists(entry_output_path):
+				os.mkdir(entry_output_path)
+			entry.add(key="entry_output_directory",value=entry_output_path)
+
 		ligand_model_entries = extract_ligand_models(model)
 
 		for ligand_entry in ligand_model_entries:
@@ -133,12 +139,10 @@ def ligands_map_model_cc(entry):
 				compute_cc_peaks=False)
 
 			if hasattr(entry,"output_directory"):
-				entry_output_path = os.path.join(entry.output_directory, entry.entry_id)
-				if not os.path.exists(entry_output_path):
-					os.mkdir(entry_output_path)
-				ligand_model_path = os.path.join(entry_output_path,
+
+				ligand_model_path = os.path.join(entry.entry_output_directory,
 																				 "ligand_" + ligand_entry.ligand_id + ".pdb")
-				ligand_map_path = os.path.join(entry_output_path,
+				ligand_map_path = os.path.join(entry.entry_output_directory,
 																			 "ligand_" + ligand_entry.ligand_id + ".map")
 
 				ligand_entry.add(key="ligand_model_path", value=ligand_model_path)
@@ -153,7 +157,8 @@ def ligands_map_model_cc(entry):
 
 		entry.add(key="ligands", value=ligand_model_entries)
 		if hasattr(entry, "output_directory"):
-			entry_pkl_path = os.path.join(entry.output_directory, entry.entry_id, "entry.pkl")
+			entry_pkl_path = os.path.join(entry.entry_output_directory,
+																		"entry"+entry.entry_id+".pkl")
 			with open(entry_pkl_path, "wb") as fh:
 				pickle.dump(entry, fh)
 
@@ -204,9 +209,9 @@ def read_data_directory(input_directory):
 			entries.append(entry)
 
 	# filter entries
-	logging.info("Found "+str(len(entries))+"entries")
+	logging.info("Found "+str(len(entries))+" entries")
 	entries_with_errors = [entry for entry in entries if entry.error is not None]
-	logging.info("Dropped " + str(len(entries_with_errors)) + "due to "
+	logging.info("Dropped " + str(len(entries_with_errors)) + " due to "
 																													 "pre-identified "
 																													 "errors.")
 	entries_without_errors = set(entries).difference(entries_with_errors)
@@ -217,7 +222,7 @@ def read_data_directory(input_directory):
 												os.path.exists(entry.map_file) and os.path.exists(
 													entry.model_file)]
 	logging.info("Dropped " + str(len(entries_without_errors)-len(
-		entries_with_files)) + "entries due to inaccessible files.")
+		entries_with_files)) + " entries due to inaccessible files.")
 
 	return entries_with_files
 
@@ -243,7 +248,7 @@ def process_data_directory(input_directory,
 
 
 
-	entries = entries[:40] # dbg
+	entries = entries[50:60] # dbg
 	if args.nproc ==1:
 		results = []
 		for entry in entries:
