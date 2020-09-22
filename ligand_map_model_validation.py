@@ -204,7 +204,11 @@ def read_data_directory(input_directory):
 			entries.append(entry)
 
 	# filter entries
+	logging.info("Found "+str(len(entries))+"entries")
 	entries_with_errors = [entry for entry in entries if entry.error is not None]
+	logging.info("Dropped " + str(len(entries_with_errors)) + "due to "
+																													 "pre-identified "
+																													 "errors.")
 	entries_without_errors = set(entries).difference(entries_with_errors)
 	entries_with_files = [entry for entry in entries_without_errors if
 												(entry.map_file is not None) and (
@@ -212,56 +216,14 @@ def read_data_directory(input_directory):
 	entries_with_files = [entry for entry in entries_with_files if
 												os.path.exists(entry.map_file) and os.path.exists(
 													entry.model_file)]
+	logging.info("Dropped " + str(len(entries_without_errors)-len(
+		entries_with_files)) + "entries due to inaccessible files.")
 
 	return entries_with_files
 
-	# if not os.path.exists(output_directory):
-	# 	os.mkdir(output_directory)
-	# output_contents = os.listdir(output_directory)
-	# entry_ids = [entry for entry in os.listdir(input_directory) if
-	# 						 os.path.isdir(os.path.join(input_directory,entry))]
-	#
-	# entries = []  # this is a list of group_args objects
-	#
-	# # read the group_args objects in from the .pkl files in the maps_and_models directory
-	# for entry_id in entry_ids:
-	# 	entry_path = os.path.join(input_directory,entry_id)
-	# 	filenames = os.listdir(entry_path)
-	# 	extensions = [filename.split(".")[-1] for filename in filenames]
-	# 	extension_dict = Counter(extensions)
-	# 	if extension_dict["pkl"] == 1:
-	# 		pkl_path = entry_path + "/" + [filename for filename in filenames if
-	# 																	 filename.split(".")[-1] == "pkl"][0]
-	# 		with open(pkl_path, "rb") as fh:
-	# 			group_args = pickle.load(fh)
-	# 		group_args.add(key="entry_id", value=entry_id)
-	# 		group_args.add(key="pdb_accession", value=entry_id[:4])
-	# 		group_args.add(key="emdb_accession", value=entry_id[5:])
-	# 		group_args.add(key="local_map_file", value=os.path.join(entry_path,
-	# 																											 entry_id+".map"))
-	# 		group_args.add(key="local_model_file", value=os.path.join(entry_path,
-	# 																											 entry_id+".cif"))
-	# 		if output_directory is not None:
-	# 			group_args.add(key="output_directory",value=output_directory)
-	# 		if (output_directory is not None and entry_id in output_contents) and \
-	# 						overwrite is False:
-	# 				pass # skip because already processed
-	# 		else:
-	# 			entries.append(group_args)
-	#
-	# if nproc ==1:
-	# 	results = []
-	# 	for entry in entries:
-	# 		r = ligands_map_model_cc(entry)
-	# 		results.append(r)
-	# else:
-	# 	p = Pool(nproc)
-	# 	results = p.map(ligands_map_model_cc, entries)
-	#
-	# return results
 
 
-def process_directory(input_directory,
+def process_data_directory(input_directory,
 											output_directory=None,
 											overwrite=False,
 											nproc=1):
@@ -281,7 +243,7 @@ def process_directory(input_directory,
 
 
 
-	entries = entries[:20] # dbg
+	entries = entries[:40] # dbg
 	if args.nproc ==1:
 		results = []
 		for entry in entries:
@@ -320,7 +282,7 @@ if __name__ == '__main__':
 	except:
 		args.nproc = 1
 
-	process_directory(**vars(args))
+	results = process_data_directory(**vars(args))
 
 
 
