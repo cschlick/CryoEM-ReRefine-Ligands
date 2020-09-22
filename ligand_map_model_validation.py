@@ -175,9 +175,11 @@ def ligands_map_model_cc(entry):
 					
 	except:
 		#entry.add(key="failed_ligands_map_model_cc",value=True)
-		logging.info("ligands_map_model_cc() failed for entry "+str(entry)+"\n\n")
-					
+		logging.info("FAILED: ligands_map_model_cc() for entry "+str(
+			entry)+"\n\n")
 
+	logging.info("SUCCESS: ligands_map_model_cc() for entry " + entry.entry_id +
+							 "\n\n")
 	return entry
 
 
