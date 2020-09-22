@@ -123,7 +123,8 @@ def ligands_map_model_cc(entry):
 			for ligand_entry in ligand_model_entries:
 
 				map_model_manager = MapModelManager(map_manager=mm.deep_copy(),
-																						model=ligand_entry.model)
+																						model=ligand_entry.model,
+																						ignore_symmetry_conflicts=True)
 				boxed_mmm = map_model_manager.extract_all_maps_around_model()
 				ligand_mm = boxed_mmm.map_manager()
 				ligand_model = boxed_mmm.model()
