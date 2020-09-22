@@ -15,8 +15,8 @@ This script contains functions for:
 2. extracting cryo-em map density from around the ligands
 3. calculate CCmask[1], the cross correlation between the ligand and the map
 
-
-Usage: 
+The term "entry" generally refers to a libtbx.group_args object 
+containing information related to a pair of PDB/EMDB depositions
 
 
 
@@ -97,81 +97,72 @@ def ligands_map_model_cc(entry):
 	"""
 	model_path = entry.model_file
 	map_path = entry.map_file
-	if model_path is None:
-		model_path = entry.local_model_file
-	if map_path is None:
-		map_path = entry.local_map_file
 
 
-	if not all([os.path.exists(model_path),os.path.exists(map_path)]):
-		logging.info("Skipping entry because file paths do not exist:\n"+str(
-			entry))
-	else:
+	dm = DataManager()
+	dm.process_model_file(model_path)
+	dm.process_real_map_file(map_path)
 
-		dm = DataManager()
-		dm.process_model_file(model_path)
-		dm.process_real_map_file(map_path)
+	mm = dm.get_real_map()
+	model = dm.get_model()
+	entry.add(key="has_ligands",value=False)
+	if len(model.composition()._result.other_cnts)>0:
+		entry.has_ligands = True
+	if entry.has_ligands:
+		ligand_model_entries = extract_ligand_models(model)
 
-		mm = dm.get_real_map()
-		model = dm.get_model()
-		entry.add(key="has_ligands",value=False)
-		if len(model.composition()._result.other_cnts)>0:
-			entry.has_ligands = True
-		if entry.has_ligands:
-			ligand_model_entries = extract_ligand_models(model)
+		for ligand_entry in ligand_model_entries:
 
-			for ligand_entry in ligand_model_entries:
+			map_model_manager = MapModelManager(map_manager=mm.deep_copy(),
+																					model=ligand_entry.model,
+																					ignore_symmetry_conflicts=True)
+			boxed_mmm = map_model_manager.extract_all_maps_around_model()
+			ligand_mm = boxed_mmm.map_manager()
+			ligand_model = boxed_mmm.model()
 
-				map_model_manager = MapModelManager(map_manager=mm.deep_copy(),
-																						model=ligand_entry.model,
-																						ignore_symmetry_conflicts=True)
-				boxed_mmm = map_model_manager.extract_all_maps_around_model()
-				ligand_mm = boxed_mmm.map_manager()
-				ligand_model = boxed_mmm.model()
+			five_cc_obj = five_cc(
+				ligand_mm.map_data(),
+				ligand_model.get_xray_structure(),
+				entry.resolution,
+				box=None,
+				keep_map_calc=False,
+				compute_cc_box=False,
+				compute_cc_image=False,
+				compute_cc_mask=True,
+				compute_cc_volume=False,
+				compute_cc_peaks=False)
 
-				five_cc_obj = five_cc(
-					ligand_mm.map_data(),
-					ligand_model.get_xray_structure(),
-					entry.resolution,
-					box=None,
-					keep_map_calc=False,
-					compute_cc_box=False,
-					compute_cc_image=False,
-					compute_cc_mask=True,
-					compute_cc_volume=False,
-					compute_cc_peaks=False)
+			if hasattr(entry,"output_directory"):
+				entry_output_path = os.path.join(entry.output_directory, entry.entry_id)
+				if not os.path.exists(entry_output_path):
+					os.mkdir(entry_output_path)
+				ligand_model_path = os.path.join(entry_output_path,
+																				 "ligand_" + ligand_entry.ligand_id + ".pdb")
+				ligand_map_path = os.path.join(entry_output_path,
+																			 "ligand_" + ligand_entry.ligand_id + ".map")
 
-				if hasattr(entry,"output_directory"):
-					entry_output_path = os.path.join(entry.output_directory, entry.entry_id)
-					if not os.path.exists(entry_output_path):
-						os.mkdir(entry_output_path)
-					ligand_model_path = os.path.join(entry_output_path,
-																					 "ligand_" + ligand_entry.ligand_id + ".pdb")
-					ligand_map_path = os.path.join(entry_output_path,
-																				 "ligand_" + ligand_entry.ligand_id + ".map")
+				ligand_entry.add(key="ligand_model_path", value=ligand_model_path)
+				ligand_entry.add(key="ligand_map_path", value=ligand_map_path)
 
-					ligand_entry.add(key="ligand_model_path", value=ligand_model_path)
-					ligand_entry.add(key="ligand_map_path", value=ligand_map_path)
-
-					boxed_mmm.write_map(ligand_map_path)
-					boxed_mmm.write_model(ligand_model_path)
+				boxed_mmm.write_map(ligand_map_path)
+				boxed_mmm.write_model(ligand_model_path)
 
 
-				ligand_entry.add(key="five_cc", value=five_cc_obj)
-				delattr(ligand_entry,"model") #for multiprocessing, model cannot be pickled
+			ligand_entry.add(key="five_cc", value=five_cc_obj)
+			delattr(ligand_entry,"model") #for multiprocessing, model cannot be pickled
 
-			entry.add(key="ligands", value=ligand_model_entries)
-			if hasattr(entry, "output_directory"):
-				entry_pkl_path = os.path.join(entry.output_directory, entry.entry_id, "entry.pkl")
-				with open(entry_pkl_path, "wb") as fh:
-					pickle.dump(entry, fh)
+		entry.add(key="ligands", value=ligand_model_entries)
+		if hasattr(entry, "output_directory"):
+			entry_pkl_path = os.path.join(entry.output_directory, entry.entry_id, "entry.pkl")
+			with open(entry_pkl_path, "wb") as fh:
+				pickle.dump(entry, fh)
 
 	return entry
 
 
 
-def process_directory(input_directory,nproc=2,output_directory=None,
-											overwrite=False):
+
+def read_data_directory(input_directory):
 	"""
 
 	Parameters
@@ -191,17 +182,14 @@ def process_directory(input_directory,nproc=2,output_directory=None,
 										information for each ligand model
 	"""
 
-	if not os.path.exists(output_directory):
-		os.mkdir(output_directory)
-	output_contents = os.listdir(output_directory)
 	entry_ids = [entry for entry in os.listdir(input_directory) if
-							 os.path.isdir(os.path.join(input_directory,entry))]
+							 os.path.isdir(os.path.join(input_directory, entry))]
 
 	entries = []  # this is a list of group_args objects
 
 	# read the group_args objects in from the .pkl files in the maps_and_models directory
 	for entry_id in entry_ids:
-		entry_path = os.path.join(input_directory,entry_id)
+		entry_path = os.path.join(input_directory, entry_id)
 		filenames = os.listdir(entry_path)
 		extensions = [filename.split(".")[-1] for filename in filenames]
 		extension_dict = Counter(extensions)
@@ -209,32 +197,102 @@ def process_directory(input_directory,nproc=2,output_directory=None,
 			pkl_path = entry_path + "/" + [filename for filename in filenames if
 																		 filename.split(".")[-1] == "pkl"][0]
 			with open(pkl_path, "rb") as fh:
-				group_args = pickle.load(fh)
-			group_args.add(key="entry_id", value=entry_id)
-			group_args.add(key="pdb_accession", value=entry_id[:4])
-			group_args.add(key="emdb_accession", value=entry_id[5:])
-			group_args.add(key="local_map_file", value=os.path.join(entry_path,
-																												 entry_id+".map"))
-			group_args.add(key="local_model_file", value=os.path.join(entry_path,
-																												 entry_id+".cif"))
-			if output_directory is not None:
-				group_args.add(key="output_directory",value=output_directory)
-			if (output_directory is not None and entry_id in output_contents) and \
-							overwrite is False:
-					pass # skip because already processed
-			else:
-				entries.append(group_args)
+				entry = pickle.load(fh)
+			entry.add(key="entry_id", value=entry_id)
+			entry.add(key="pdb_accession", value=entry_id[:4])
+			entry.add(key="emdb_accession", value=entry_id[5:])
+			entries.append(entry)
 
-	if nproc ==1:
+	# filter entries
+	entries_with_errors = [entry for entry in entries if entry.error is not None]
+	entries_without_errors = set(entries).difference(entries_with_errors)
+	entries_with_files = [entry for entry in entries_without_errors if
+												(entry.map_file is not None) and (
+																	entry.model_file is not None)]
+	entries_with_files = [entry for entry in entries_with_files if
+												os.path.exists(entry.map_file) and os.path.exists(
+													entry.model_file)]
+
+	return entries_with_files
+
+	# if not os.path.exists(output_directory):
+	# 	os.mkdir(output_directory)
+	# output_contents = os.listdir(output_directory)
+	# entry_ids = [entry for entry in os.listdir(input_directory) if
+	# 						 os.path.isdir(os.path.join(input_directory,entry))]
+	#
+	# entries = []  # this is a list of group_args objects
+	#
+	# # read the group_args objects in from the .pkl files in the maps_and_models directory
+	# for entry_id in entry_ids:
+	# 	entry_path = os.path.join(input_directory,entry_id)
+	# 	filenames = os.listdir(entry_path)
+	# 	extensions = [filename.split(".")[-1] for filename in filenames]
+	# 	extension_dict = Counter(extensions)
+	# 	if extension_dict["pkl"] == 1:
+	# 		pkl_path = entry_path + "/" + [filename for filename in filenames if
+	# 																	 filename.split(".")[-1] == "pkl"][0]
+	# 		with open(pkl_path, "rb") as fh:
+	# 			group_args = pickle.load(fh)
+	# 		group_args.add(key="entry_id", value=entry_id)
+	# 		group_args.add(key="pdb_accession", value=entry_id[:4])
+	# 		group_args.add(key="emdb_accession", value=entry_id[5:])
+	# 		group_args.add(key="local_map_file", value=os.path.join(entry_path,
+	# 																											 entry_id+".map"))
+	# 		group_args.add(key="local_model_file", value=os.path.join(entry_path,
+	# 																											 entry_id+".cif"))
+	# 		if output_directory is not None:
+	# 			group_args.add(key="output_directory",value=output_directory)
+	# 		if (output_directory is not None and entry_id in output_contents) and \
+	# 						overwrite is False:
+	# 				pass # skip because already processed
+	# 		else:
+	# 			entries.append(group_args)
+	#
+	# if nproc ==1:
+	# 	results = []
+	# 	for entry in entries:
+	# 		r = ligands_map_model_cc(entry)
+	# 		results.append(r)
+	# else:
+	# 	p = Pool(nproc)
+	# 	results = p.map(ligands_map_model_cc, entries)
+	#
+	# return results
+
+
+def process_directory(input_directory,
+											output_directory=None,
+											overwrite=False,
+											nproc=1):
+
+	entries = read_data_directory(input_directory)
+	if output_directory is not None:
+		for entry in entries:
+			entry.add(key="output_directory",value=output_directory)
+		if not os.path.exists(output_directory):
+			os.mkdir(output_directory)
+		if (not overwrite):
+			output_contents = os.listdir(output_directory)
+			entry_ids = [entry.entry_id for entry in entries]
+			entry_ids_to_process = set(entry_ids).difference(output_contents)
+			entries = [entry for entry in entries if entry.entry_id in
+								 entry_ids_to_process]
+
+
+
+	entries = entries[:20] # dbg
+	if args.nproc ==1:
 		results = []
 		for entry in entries:
 			r = ligands_map_model_cc(entry)
 			results.append(r)
 	else:
-		p = Pool(nproc)
+		p = Pool(args.nproc)
 		results = p.map(ligands_map_model_cc, entries)
-
 	return results
+
+
 
 if __name__ == '__main__':
 	logfilepath = 'ligand_map_model_validation.log'
@@ -256,10 +314,13 @@ if __name__ == '__main__':
 
 	args.input_directory = os.path.abspath(args.input_directory)
 	args.output_directory = os.path.abspath(args.output_directory)
+
 	try:
 		args.nproc = int(args.nproc)
 	except:
-		args.nproc = 2
+		args.nproc = 1
 
 	process_directory(**vars(args))
+
+
 
