@@ -96,8 +96,8 @@ def ligands_map_model_cc(entry):
 						entry.ligands	# a list of group_args objects for each ligand found
 						entry.ligands[0].five_cc_obj	# the cross correlation information
 	"""
-	model_path = entry.local_model_file
-	map_path = entry.local_map_file
+	model_path = entry.model_file
+	map_path = entry.map_file
 
 	if not all([os.path.exists(model_path),os.path.exists(map_path)]):
 		logging.info("Skipping entry because file paths do not exist: "+str(entry))
@@ -206,10 +206,10 @@ def process_directory(input_directory,nproc=2,output_directory=None,
 			group_args.add(key="entry_id", value=entry_id)
 			group_args.add(key="pdb_accession", value=entry_id[:4])
 			group_args.add(key="emdb_accession", value=entry_id[5:])
-			group_args.add(key="local_map_file", value=os.path.join(entry_path,
-																												 entry_id+".map"))
-			group_args.add(key="local_model_file", value=os.path.join(entry_path,
-																												 entry_id+".cif"))
+			# group_args.add(key="local_map_file", value=os.path.join(entry_path,
+			# 																									 entry_id+".map"))
+			# group_args.add(key="local_model_file", value=os.path.join(entry_path,
+			# 																									 entry_id+".cif"))
 			if output_directory is not None:
 				group_args.add(key="output_directory",value=output_directory)
 			if (output_directory is not None and entry_id in output_contents) and \
