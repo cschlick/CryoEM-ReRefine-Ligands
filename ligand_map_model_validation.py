@@ -94,10 +94,8 @@ def ligands_map_model_cc(entry):
 						entry.ligands	# a list of group_args objects for each ligand found
 						entry.ligands[0].five_cc_obj	# the cross correlation information
 	"""
-	model_path = os.path.join("data/testdata", entry.entry_id,
-														entry.entry_id + ".cif")
-	map_path = os.path.join("data/testdata", entry.entry_id,
-													entry.entry_id + ".map")
+	model_path = entry.model_file
+	map_path = entry.map_file
 
 	dm = DataManager()
 	dm.process_model_file(model_path)
@@ -205,9 +203,14 @@ def process_directory(input_directory,nproc=2,output_directory=None,
 			else:
 				entries.append(group_args)
 
-	p = Pool(nproc)
-	results = p.map(ligands_map_model_cc, entries)
-	return results
+	
+        #p = Pool(nproc)
+	#results = p.map(ligands_map_model_cc, entries)
+	results = []
+        for entry in entries[:2]:
+          r = ligands_map_model_cc(entry)
+          results.append(r)
+        return results
 
 if __name__ == '__main__':
 
