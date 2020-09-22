@@ -105,7 +105,7 @@ def ligands_map_model_cc(entry):
 	mm = dm.get_real_map()
 	model = dm.get_model()
 	entry.add(key="has_ligands",value=False)
-	if len(model.get_composition()._result.other_cnts)>0:
+	if len(model.composition()._result.other_cnts)>0:
 		entry.has_ligands = True
 	if entry.has_ligands:
 		ligand_model_entries = extract_ligand_models(model)
