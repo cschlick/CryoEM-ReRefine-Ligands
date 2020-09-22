@@ -1,7 +1,6 @@
 from iotbx.data_manager import DataManager
 from iotbx.map_model_manager import map_model_manager as MapModelManager
 from libtbx import group_args
-from libtbx.utils import Sorry
 import pickle
 import os
 from collections import Counter
@@ -105,7 +104,8 @@ def ligands_map_model_cc(entry):
 
 
 	if not all([os.path.exists(model_path),os.path.exists(map_path)]):
-		logging.info("Skipping entry because file paths do not exist: "+str(entry))
+		logging.info("Skipping entry because file paths do not exist:\n"+str(
+			entry))
 	else:
 
 		dm = DataManager()
@@ -156,15 +156,16 @@ def ligands_map_model_cc(entry):
 					boxed_mmm.write_map(ligand_map_path)
 					boxed_mmm.write_model(ligand_model_path)
 
-					five_cc_pkl_path = os.path.join(entry_output_path, "five_cc_object.pkl")
-					ligand_entry.add(key="five_cc_pkl_path", value=five_cc_pkl_path)
-					with open(five_cc_pkl_path, "wb") as fh:
-						pickle.dump(five_cc_obj, fh)
 
 				ligand_entry.add(key="five_cc", value=five_cc_obj)
 				delattr(ligand_entry,"model") #for multiprocessing, model cannot be pickled
 
 			entry.add(key="ligands", value=ligand_model_entries)
+			if hasattr(entry, "output_directory"):
+				entry_pkl_path = os.path.join(entry_output_path, "entry.pkl")
+				with open(entry_pkl_path, "wb") as fh:
+					pickle.dump(entry, fh)
+
 	return entry
 
 
