@@ -259,7 +259,7 @@ def process_data_directory(input_directory,
 if __name__ == '__main__':
 	logfilepath = 'ligand_map_model_validation.log'
 	if os.path.exists(logfilepath):
-		os.remove(logfilepath)
+		pass
 	logging.basicConfig(filename=logfilepath,
 											level=logging.DEBUG)
 	parser = argparse.ArgumentParser()
