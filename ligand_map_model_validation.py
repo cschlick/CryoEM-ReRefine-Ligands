@@ -162,7 +162,7 @@ def ligands_map_model_cc(entry):
 
 			entry.add(key="ligands", value=ligand_model_entries)
 			if hasattr(entry, "output_directory"):
-				entry_pkl_path = os.path.join(entry_output_path, "entry.pkl")
+				entry_pkl_path = os.path.join(entry.output_directory, entry.entry_id, "entry.pkl")
 				with open(entry_pkl_path, "wb") as fh:
 					pickle.dump(entry, fh)
 
