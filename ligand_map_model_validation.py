@@ -99,7 +99,7 @@ def ligands_map_model_cc(entry):
 	model_path = entry.local_model_file
 	map_path = entry.local_map_file
 
-	if not all(os.path.exists(model_path),os.path.exists(map_path)):
+	if not all([os.path.exists(model_path),os.path.exists(map_path)]):
 		logging.info("Skipping entry because file paths do not exist: "+str(entry))
 	else:
 
