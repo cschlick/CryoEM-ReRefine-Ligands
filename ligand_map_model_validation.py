@@ -8,6 +8,7 @@ from collections import Counter
 from mmtbx.maps.correlation import five_cc
 from multiprocessing import Pool
 import argparse
+import logging
 
 """
 This script contains functions for:
@@ -95,66 +96,69 @@ def ligands_map_model_cc(entry):
 						entry.ligands	# a list of group_args objects for each ligand found
 						entry.ligands[0].five_cc_obj	# the cross correlation information
 	"""
-	print(entry)
-	model_path = entry.model_file
-	map_path = entry.map_file
+	model_path = entry.local_model_file
+	map_path = entry.local_map_file
 
-	dm = DataManager()
-	dm.process_model_file(model_path)
-	dm.process_real_map_file(map_path)
+	if not all(os.path.exists(model_path),os.path.exists(map_path)):
+		logging.info("Skipping entry because file paths do not exist: "+str(entry))
+	else:
 
-	mm = dm.get_real_map()
-	model = dm.get_model()
-	entry.add(key="has_ligands",value=False)
-	if len(model.composition()._result.other_cnts)>0:
-		entry.has_ligands = True
-	if entry.has_ligands:
-		ligand_model_entries = extract_ligand_models(model)
+		dm = DataManager()
+		dm.process_model_file(model_path)
+		dm.process_real_map_file(map_path)
 
-		for ligand_entry in ligand_model_entries:
+		mm = dm.get_real_map()
+		model = dm.get_model()
+		entry.add(key="has_ligands",value=False)
+		if len(model.composition()._result.other_cnts)>0:
+			entry.has_ligands = True
+		if entry.has_ligands:
+			ligand_model_entries = extract_ligand_models(model)
 
-			map_model_manager = MapModelManager(map_manager=mm.deep_copy(),
-																					model=ligand_entry.model)
-			boxed_mmm = map_model_manager.extract_all_maps_around_model()
-			ligand_mm = boxed_mmm.map_manager()
-			ligand_model = boxed_mmm.model()
+			for ligand_entry in ligand_model_entries:
 
-			five_cc_obj = five_cc(
-				ligand_mm.map_data(),
-				ligand_model.get_xray_structure(),
-				entry.resolution,
-				box=None,
-				keep_map_calc=False,
-				compute_cc_box=False,
-				compute_cc_image=False,
-				compute_cc_mask=True,
-				compute_cc_volume=False,
-				compute_cc_peaks=False)
+				map_model_manager = MapModelManager(map_manager=mm.deep_copy(),
+																						model=ligand_entry.model)
+				boxed_mmm = map_model_manager.extract_all_maps_around_model()
+				ligand_mm = boxed_mmm.map_manager()
+				ligand_model = boxed_mmm.model()
 
-			if hasattr(entry,"output_directory"):
-				entry_output_path = os.path.join(entry.output_directory, entry.entry_id)
-				if not os.path.exists(entry_output_path):
-					os.mkdir(entry_output_path)
-				ligand_model_path = os.path.join(entry_output_path,
-																				 "ligand_" + ligand_entry.ligand_id + ".pdb")
-				ligand_map_path = os.path.join(entry_output_path,
-																			 "ligand_" + ligand_entry.ligand_id + ".map")
+				five_cc_obj = five_cc(
+					ligand_mm.map_data(),
+					ligand_model.get_xray_structure(),
+					entry.resolution,
+					box=None,
+					keep_map_calc=False,
+					compute_cc_box=False,
+					compute_cc_image=False,
+					compute_cc_mask=True,
+					compute_cc_volume=False,
+					compute_cc_peaks=False)
 
-				ligand_entry.add(key="ligand_model_path", value=ligand_model_path)
-				ligand_entry.add(key="ligand_map_path", value=ligand_map_path)
+				if hasattr(entry,"output_directory"):
+					entry_output_path = os.path.join(entry.output_directory, entry.entry_id)
+					if not os.path.exists(entry_output_path):
+						os.mkdir(entry_output_path)
+					ligand_model_path = os.path.join(entry_output_path,
+																					 "ligand_" + ligand_entry.ligand_id + ".pdb")
+					ligand_map_path = os.path.join(entry_output_path,
+																				 "ligand_" + ligand_entry.ligand_id + ".map")
 
-				boxed_mmm.write_map(ligand_map_path)
-				boxed_mmm.write_model(ligand_model_path)
+					ligand_entry.add(key="ligand_model_path", value=ligand_model_path)
+					ligand_entry.add(key="ligand_map_path", value=ligand_map_path)
 
-				five_cc_pkl_path = os.path.join(entry_output_path, "five_cc_object.pkl")
-				ligand_entry.add(key="five_cc_pkl_path", value=five_cc_pkl_path)
-				with open(five_cc_pkl_path, "wb") as fh:
-					pickle.dump(five_cc_obj, fh)
+					boxed_mmm.write_map(ligand_map_path)
+					boxed_mmm.write_model(ligand_model_path)
 
-			ligand_entry.add(key="five_cc", value=five_cc_obj)
-			delattr(ligand_entry,"model") #for multiprocessing, model cannot be pickled
+					five_cc_pkl_path = os.path.join(entry_output_path, "five_cc_object.pkl")
+					ligand_entry.add(key="five_cc_pkl_path", value=five_cc_pkl_path)
+					with open(five_cc_pkl_path, "wb") as fh:
+						pickle.dump(five_cc_obj, fh)
 
-		entry.add(key="ligands", value=ligand_model_entries)
+				ligand_entry.add(key="five_cc", value=five_cc_obj)
+				delattr(ligand_entry,"model") #for multiprocessing, model cannot be pickled
+
+			entry.add(key="ligands", value=ligand_model_entries)
 	return entry
 
 
@@ -229,7 +233,8 @@ def process_directory(input_directory,nproc=2,output_directory=None,
 	return results
 
 if __name__ == '__main__':
-
+	logging.basicConfig(filename='ligand_map_model_validation.log',
+											level=logging.DEBUG)
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--input_directory', help='Directory of PDB/EMDB '
 																								'entries.')
