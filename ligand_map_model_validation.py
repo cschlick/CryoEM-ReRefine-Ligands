@@ -225,8 +225,6 @@ def process_directory(input_directory,nproc=2,output_directory=None,
 			else:
 				entries.append(group_args)
 
-	entries = entries[:20] # dbg
-
 	if nproc ==1:
 		results = []
 		for entry in entries:
