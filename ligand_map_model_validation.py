@@ -8,7 +8,6 @@ from mmtbx.maps.correlation import five_cc
 from multiprocessing import Pool
 import argparse
 import logging
-import requests
 
 """
 This script contains functions for:
@@ -16,10 +15,15 @@ This script contains functions for:
 2. extracting cryo-em map density from around the ligands
 3. calculate CCmask[1], the cross correlation between the ligand and the map
 
-The term "entry" generally refers to a libtbx.group_args object 
+The frequently used term "entry" generally refers to a libtbx.group_args object 
 containing information related to a pair of PDB/EMDB depositions
 
-
+	 Usage
+	-------
+	
+	
+	
+	
 
 
 [1] https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6130467/
@@ -59,17 +63,22 @@ def extract_ligand_models(model, desired_hetcodes=[], ignored_hetcodes=["UNK"]):
 	ligand_entries = []
 	for rg in other_model.get_hierarchy().residue_groups():
 		unique_resnames = list(rg.unique_resnames())
-		assert(len(unique_resnames) == 1)
-		resname = unique_resnames[0]
-		if resname not in ignored_hetcodes:
-			if (len(desired_hetcodes) == 0) or resname in desired_hetcodes:
-				atoms = rg.atoms()
-				atoms_sel = atoms.extract_i_seq()
-				ligand_model = other_model.select(atoms_sel)
-				ligand_id = resname+"_"+rg.parent().id
-				group = group_args(resname=resname, model=ligand_model,
-													 ligand_id=ligand_id)
-				ligand_entries.append(group)
+		if len(unique_resnames) == 1:
+
+			resname = unique_resnames[0]
+			if resname not in ignored_hetcodes:
+				if (len(desired_hetcodes) == 0) or resname in desired_hetcodes:
+					atoms = rg.atoms()
+					atoms_sel = atoms.extract_i_seq()
+					ligand_model = other_model.select(atoms_sel)
+					ligand_id = resname+"_"+rg.parent().id
+					group = group_args(resname=resname, model=ligand_model,
+														 ligand_id=ligand_id)
+					ligand_entries.append(group)
+		else:
+			logging.info("Error, multiple resnames for residue group:"+str(
+				unique_resnames)+str(model.composition()))
+			ligand_entries = []
 
 	return ligand_entries
 
