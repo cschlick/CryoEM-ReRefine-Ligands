@@ -212,7 +212,7 @@ def process_directory(input_directory,nproc=2,output_directory=None,
 
 	
 	p = Pool(nproc)
-	results = p.map(ligands_map_model_cc, entries)
+	results = p.map(ligands_map_model_cc, entries[:20])
 
 	return results
 
