@@ -68,7 +68,6 @@ def extract_ligand_models(model, desired_hetcodes=[], ignored_hetcodes=["UNK"]):
 	for rg in other_model.get_hierarchy().residue_groups():
 		unique_resnames = list(rg.unique_resnames())
 		if len(unique_resnames) == 1:
-
 			resname = unique_resnames[0]
 			if resname not in ignored_hetcodes:
 				if (len(desired_hetcodes) == 0) or resname in desired_hetcodes:
@@ -164,6 +163,9 @@ def ligands_map_model_cc(entry):
 	
 					boxed_mmm.write_map(ligand_map_path)
 					boxed_mmm.write_model(ligand_model_path)
+
+				del map_model_manager
+
 	
 	
 				ligand_entry.add(key="five_cc", value=five_cc_obj)
