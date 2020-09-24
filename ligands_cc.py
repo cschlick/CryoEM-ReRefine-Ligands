@@ -111,7 +111,7 @@ def ligands_cc_from_mmm(map_model_manager, resolution=None,
 
   ccmask_values       :map_model correlation values for each ligand
   """
-
+  dm = DataManager()
   mmm = map_model_manager
   mm = mmm.map_manager()
   model = mmm.model()
@@ -144,7 +144,7 @@ def ligands_cc_from_mmm(map_model_manager, resolution=None,
     if output_directory is not None:
 
       if not os.path.exists(output_directory):
-        os.path.mkdir(output_directory)
+        os.mkdir(output_directory)
 
       ligand_name = resname.strip() + "_" + chain_id.strip()
       ligand_map_file = os.path.abspath(
