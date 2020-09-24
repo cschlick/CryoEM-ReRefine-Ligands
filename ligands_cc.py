@@ -204,7 +204,8 @@ if __name__ == "__main__":
   running = False
   args = sys.argv[1:]
   if len(args) not in [3, 4]:
-    print("Usage: 'phenix.map_cc <model_file> <map_file> <resolution> <optional: output_directory>'")
+    print("Usage: 'ligands_cc.py <model_file> <map_file> <resolution> "
+          "<optional: output_directory>'")
   elif len(args) == 3:
     model_file = args[0]
     map_file = args[1]
