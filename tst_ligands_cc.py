@@ -18,7 +18,8 @@ from ligands_cc import extract_ligand_models, ligands_cc_from_mmm
 def tst_01():
   # Excercise the ligands_cc.extract_ligand_models function
   # Also generate a map for tst_02 
-  model_file = "6f1u_fragment.pdb"  # TODO: this should be in regression dir
+  model_file = "data/6f1u_fragment.pdb"  # TODO: this should be in regression
+  # dir
 
   dm = DataManager()
   dm.process_model_file(model_file)
@@ -58,14 +59,14 @@ def tst_01():
   ############################################# end simulated map
 
   new_mmm = MapModelManager(map_manager=new_mm, model=ligand_model)
-  new_mmm.write_model("./6f1u_framgent_testing.pdb")
-  new_mmm.write_map("./6f1u_framgent_testing.map")
+  new_mmm.write_model("data/6f1u_framgent_testing.pdb")
+  new_mmm.write_map("data/6f1u_framgent_testing.map")
 
 
 def tst_02():
   # excercise the ligands_cc.ligands_cc_from_mmm function
-  model_file = "./6f1u_framgent_testing.pdb"
-  map_file = "./6f1u_framgent_testing.map"
+  model_file = "data/6f1u_framgent_testing.pdb"
+  map_file = "data/6f1u_framgent_testing.map"
   assert(os.path.exists(model_file))
   assert(os.path.exists(map_file))
   dm = DataManager()
