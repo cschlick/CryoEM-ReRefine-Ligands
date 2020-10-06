@@ -152,6 +152,16 @@ class LigandsCC:
 
   @staticmethod
   def ligand_id_tuple(ligand_model):
+    """
+    Convenience function for geting ligand hierarchy info:
+    Params
+    ------
+    ligand_model : mmtbx.model.model_manager
+
+    Returns
+    -------
+    id_tuple   : (model.id, chain.id, rg.resseq, resname)
+    """
     id_tuples = []
     for model in ligand_model.get_hierarchy().models():
       for chain in model.chains():
@@ -165,6 +175,16 @@ class LigandsCC:
 
   @staticmethod
   def ligand_name(ligand_model):
+    """
+    Convenience function for constructing a ligand name:
+    Params
+    ------
+    ligand_model : mmtbx.model.model_manager
+
+    Returns
+    -------
+    name  : str
+    """
     ligand_id = LigandsCC.ligand_id_tuple(ligand_model)
     model_id, chain_id, resseq, resname = ligand_id
     name = ""
