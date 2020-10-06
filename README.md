@@ -4,7 +4,7 @@
 > A tool for CCTBX/Phenix to extract ligands and calculate map-model cross correlation.
 > It will optionally write out density maps and models for each ligand
 
-Usage: phenix.ligands_cc <model_file> <map_file> resolution=<resolution> 
+Usage: phenix.ligands_cc <model_file> <map_file> resolution= <resolution>  
 
 Optional command line arguments:
 
