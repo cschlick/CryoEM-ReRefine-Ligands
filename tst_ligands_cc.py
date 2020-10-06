@@ -4,69 +4,110 @@ from __future__ import division, print_function
 from iotbx.data_manager import DataManager
 from iotbx.map_model_manager import map_model_manager as MapModelManager
 from libtbx.test_utils import approx_equal
-from cctbx.development.create_models_or_maps import generate_model, \
-  generate_map_coefficients
-from cctbx.development.create_models_or_maps import generate_map \
-  as generate_map_data
+
 
 import time, sys, os
 
-sys.path.append(".")  # TODO: move this import to phenix directories
-from ligands_cc import extract_ligand_models, ligands_cc_from_mmm
+
+from phenix.ligands_cc.ligands_cc import LigandsCC, LigandSelection
 
 
 def tst_01():
-  # Excercise the ligands_cc.extract_ligand_models function
-  # Also generate a map for tst_02 
-  model_file = "data/6f1u_fragment.pdb"  # TODO: this should be in regression
-  # dir
+  # Excercise the ligand selection
 
-  dm = DataManager()
-  dm.process_model_file(model_file)
-  model = dm.get_model()
+  # test defaults only
+  resname = "MG"
+  ls = LigandSelection(include_resnames=None,
+                       include_only_resnames=None,
+                       exclude_resnames=None,
+                       include_residue_classes=None,
+                       exclude_residue_classes=None,
+                       )
+  assert (ls.query(resname) == False)
 
-  # this is necessary for cryo-em models without crystal symmetry
-  if model.crystal_symmetry() is None:
-    from cctbx.maptbx.box import shift_and_box_model
-    model = shift_and_box_model(model)
+  resname = "ADP"
+  ls = LigandSelection(include_resnames=None,
+                       include_only_resnames=None,
+                       exclude_resnames=None,
+                       include_residue_classes=None,
+                       exclude_residue_classes=None,
+                       )
+  assert (ls.query(resname) == True)
 
-  ligand_dict = extract_ligand_models(model)
-  assert (len(ligand_dict) == 1)
-  assert (ligand_dict.keys()[0] == ('', 'O', '   1', 'ADP'))
-  ligand_model = ligand_dict.values()[0]
+  # test include only
 
-  # try to generate a simulated map for the model
-  # I have tried this multiple ways, and I still can't get it to work as expected.
-  # TODO: ask about this
-  d_min = 3.5
-  map_coeffs = generate_map_coefficients(model=ligand_model,
-                                         d_min=d_min,
-                                         scattering_table="xray",
-                                         # electron causes error
-                                         log=None)
-  new_mm = generate_map_data(
-    map_coeffs=map_coeffs,
-    d_min=d_min,
-    gridding=(1, 1, 1),  # this is a placeholder
-    wrapping=False,
-    origin_shift_grid_units=None,
-    high_resolution_real_space_noise_fraction=0,
-    log=None)
+  resname = "MG"
+  ls = LigandSelection(include_resnames=None,
+                       include_only_resnames=["ATP"],
+                       exclude_resnames=None,
+                       include_residue_classes=None,
+                       exclude_residue_classes=None,
+                       )
+  assert(ls.query(resname)== False)
 
-  ligand_model.set_shift_cart(new_mm.shift_cart())
-  ligand_model.set_unit_cell_crystal_symmetry(
-    new_mm.unit_cell_crystal_symmetry())
-  ############################################# end simulated map
+  resname = "ATP"
+  ls = LigandSelection(include_resnames=None,
+                       include_only_resnames=["ATP"],
+                       exclude_resnames=None,
+                       include_residue_classes=None,
+                       exclude_residue_classes=None,
+                       )
+  assert(ls.query(resname)==True)
 
-  new_mmm = MapModelManager(map_manager=new_mm, model=ligand_model)
-  new_mmm.write_model("data/6f1u_framgent_testing.pdb")
-  new_mmm.write_map("data/6f1u_framgent_testing.map")
+  # test supplied include_resnames
+  resname = "MG"
+  ls = LigandSelection(include_resnames=["MG"],
+                       include_only_resnames=None,
+                       exclude_resnames=None,
+                       include_residue_classes=None,
+                       exclude_residue_classes=None,
+                       )
+  assert (ls.query(resname) == True)
+
+  resname = "ATP"
+  ls = LigandSelection(include_resnames=["MG"],
+                       include_only_resnames=None,
+                       exclude_resnames=None,
+                       include_residue_classes=None,
+                       exclude_residue_classes=None,
+                       )
+  assert (ls.query(resname) == True)
+
+  # test supplied exclude_resnames
+  resname = "ATP"
+  ls = LigandSelection(include_resnames=None,
+                       include_only_resnames=None,
+                       exclude_resnames=["ATP"],
+                       include_residue_classes=None,
+                       exclude_residue_classes=None,
+                       )
+  assert (ls.query(resname) == False)
+
+  # test supplied include_residue_classes
+  resname = "MG"
+  ls = LigandSelection(include_resnames=None,
+                       include_only_resnames=None,
+                       exclude_resnames=None,
+                       include_residue_classes=["common_element"],
+                       exclude_residue_classes=None)
+  assert (ls.query(resname) == True)
+
+  # test supplied exclude_residue_classes
+  resname = "ATP"
+  ls = LigandSelection(include_resnames=None,
+                       include_only_resnames=None,
+                       exclude_resnames=None,
+                       include_residue_classes=None,
+                       exclude_residue_classes=["other"])
+  assert (ls.query(resname) == False)
+
 
 
 def tst_02():
-  # excercise the ligands_cc.ligands_cc_from_mmm function
-  model_file = "data/6f1u_framgent_testing.pdb"
-  map_file = "data/6f1u_framgent_testing.map"
+  # excercise the LigandsCC class
+  #TODO: data paths should be existing files in regression directory
+  model_file = "data/6qi8_4552/6qi8_4552.cif"
+  map_file = "data/6qi8_4552/6qi8_4552.map"
   assert(os.path.exists(model_file))
   assert(os.path.exists(map_file))
   dm = DataManager()
@@ -79,10 +120,23 @@ def tst_02():
     model = shift_and_box_model(model)
 
   mmm = MapModelManager(map_manager=dm.get_real_map(), model=dm.get_model())
-  ligand_dict, ccmask_values = ligands_cc_from_mmm(mmm, resolution=3.5)
-  assert (len(ligand_dict) == 1)
-  assert (len(ccmask_values) == 1)
-  assert (ccmask_values[0] > 0.9)
+  ligands_cc = LigandsCC(mmm, resolution=3.5)
+  ligands_cc.validate()
+  assert (approx_equal(ligands_cc.ccmask_full_model, 0.022970855944436454))
+  ligands_cc.process_ligands()
+
+  assert (len(ligands_cc.ligand_map_model_managers) == 6)
+
+  expected_ligand_ccmask = [
+    -0.080566400250404,
+    -0.05039665095274361,
+    0.02568153796222316,
+    -0.058698045705798986,
+    0.10242327846306232,
+    -0.07061912170822986]
+
+  for i, ccmask in enumerate(expected_ligand_ccmask):
+    assert (approx_equal(ccmask, ligands_cc.ccmask_ligands[i]))
 
 
 if __name__ == "__main__":
