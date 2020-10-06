@@ -1,13 +1,8 @@
 from __future__ import division, print_function
-import os
-import sys
-import pickle
 
-from iotbx.data_manager import DataManager
 from iotbx.map_model_manager import map_model_manager as MapModelManager
 from iotbx.pdb import common_residue_names_get_class
-from libtbx import group_args
-from iotbx.file_reader import splitext
+
 
 
 """
@@ -95,10 +90,6 @@ class LigandSelection:
 
       return retvalue
 
-
-
-
-
 def extract_ligand_models(model,ligand_selection=None):
   if ligand_selection is None:
     ligand_selection = LigandSelection()
@@ -120,8 +111,6 @@ def extract_ligand_models(model,ligand_selection=None):
               ligand_models.append(ligand_model)
 
   return ligand_models
-
-
 
 class LigandsCC:
 
