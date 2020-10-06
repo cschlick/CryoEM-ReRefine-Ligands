@@ -31,7 +31,7 @@ class LigandSelection:
     2) residue class : iotbx.pdb.common_residue_names_get_class(resname)
 
   Instantiation is done with lists of strings. The query(resname) method
-  returns True/False for whether this ligand should be selected
+  returns True/False for whether the resname meets the selection criteria.
   """
 
   default_exclude_resnames = {"UNK"}
