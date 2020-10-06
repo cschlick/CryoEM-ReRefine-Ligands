@@ -2,10 +2,8 @@ from __future__ import absolute_import, division, print_function
 from phenix.program_template import ProgramTemplate
 from libtbx import group_args
 from libtbx.utils import Sorry, multi_out
-from phenix.ligands_cc.ligands_cc import  LigandsCC, LigandSelection
 import os
 
-from __future__ import division, print_function
 
 from iotbx.map_model_manager import map_model_manager as MapModelManager
 from iotbx.pdb import common_residue_names_get_class
@@ -196,9 +194,6 @@ class LigandsCC:
     for mmmlig in self.ligand_map_model_managers:
       ccmask = mmmlig.map_model_cc(resolution=self.resolution)
       self.ccmask_ligands.append(ccmask)
-
-
-
 
 class Program(ProgramTemplate):
 
