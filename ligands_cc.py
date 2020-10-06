@@ -310,9 +310,13 @@ class Program(ProgramTemplate):
       exclude_resnames=self.params.ligands_cc.exclude_resnames,
       include_residue_classes=self.params.ligands_cc.include_residue_classes,
       exclude_residue_classes=self.params.ligands_cc.exclude_residue_classes)
+
     ligands_cc.process_ligands(ligand_selection)
-    print("Number of ligands found: " + str(len(ligands_cc.ligand_map_model_managers)))
+
+    print("Number of ligands found: " + str(len(
+      ligands_cc.ligand_map_model_managers)),file=self.logger)
     print("Results:",file=self.logger)
+
     for i,mmmlig in enumerate(ligands_cc.ligand_map_model_managers):
       ligand_name = LigandsCC.ligand_name(mmmlig.model())
       print("\tLigand: " + ligand_name + "\tCCmask: %.3f" % (
@@ -324,14 +328,14 @@ class Program(ProgramTemplate):
       for mmmlig in ligands_cc.ligand_map_model_managers:
         ligand_name = LigandsCC.ligand_name(mmmlig.model())
         ligand_model_file = os.path.join(output_dir, ligand_name)
-        print("\t" + ligand_name)
+        print("\t" + ligand_name,file=self.logger)
         ligand_map_file = os.path.join(output_dir, ligand_name + ".map")
-        print("\t\t"+"Model: "+ligand_model_file+".cif")
+        print("\t\t"+"Model: "+ligand_model_file+".cif",file=self.logger)
         self.data_manager.write_model_file(mmmlig.model(),
                             filename=ligand_model_file,
                             extension="cif",
                             overwrite=True)
-        print("\t\t" + "Map: " + ligand_map_file+"\n")
+        print("\t\t" + "Map: " + ligand_map_file+"\n",file=self.logger)
         self.data_manager.write_real_map_file(mmmlig.map_manager(),
                                filename=ligand_map_file,
                                overwrite=True)
@@ -341,9 +345,3 @@ class Program(ProgramTemplate):
       ligand_selection = ligand_selection,
       ligands_cc = ligands_cc
     )
-
-
-
-  # Get the results
-  def get_results(self):
-    return self.result
