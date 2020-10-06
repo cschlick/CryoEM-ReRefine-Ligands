@@ -9,7 +9,7 @@ from libtbx.test_utils import approx_equal
 import time, sys, os
 
 
-from phenix.ligands_cc.ligands_cc import LigandsCC, LigandSelection
+from phenix.programs.ligands_cc import LigandsCC, LigandSelection
 
 
 def tst_01():
