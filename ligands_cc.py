@@ -103,6 +103,19 @@ class LigandSelection:
       return retvalue
 
 def extract_ligand_models(model,ligand_selection=None):
+  """
+  Extract ligands from a parent model.
+
+  Params
+  ------
+  model  :  mmtbx.model.model_manager object
+  ligand_selection : LigandSelection object
+
+  Returns
+  -------
+  ligand_models : list of mmtbx.model.model_manager objects,
+                  one for each ligand extracted
+  """
   if ligand_selection is None:
     ligand_selection = LigandSelection()
   if model.crystal_symmetry() is None:
