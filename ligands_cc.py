@@ -210,6 +210,7 @@ class LigandsCC:
       resolution=self.resolution)
 
   def process_ligands(self,ligand_selection=None):
+    # extract map_model_manager for each ligand, calculate ccmask
     if ligand_selection is None:
       ligand_selection = LigandSelection()
     ligand_models = extract_ligand_models(self.map_model_manager.model(),ligand_selection)
