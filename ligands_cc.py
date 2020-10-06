@@ -9,10 +9,8 @@ from iotbx.pdb import common_residue_names_get_class
 Summary
 -------
 
-This module contains functions to:
-1. extract ligand models from an mmtbx.model object
-2. extract density from around those models and calculate CCmask [1]
-
+This module contains functionality to extract ligand models and calculate 
+ligand CCmask, as described here.[1]
 
 
 [1] https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6130467/
@@ -21,6 +19,15 @@ This module contains functions to:
 
 
 class LigandSelection:
+  """
+  A companion class of LigandsCC. The selection class stores preferences for
+  how to extract ligands. LigandsCC extracts on the basis of:
+    1) residue name :  iotbx_pdb_hierarchy_ext.residue_group.unique_resnames()
+    2) residue class : iotbx.pdb.common_residue_names_get_class(resname)
+
+  Instantiation is done with lists of strings. The query(resname) method
+  returns True/False for whether this ligand should be selected
+  """
 
   default_exclude_resnames = {"UNK"}
   default_exclude_residue_classes = {"common_amino_acid",
@@ -113,6 +120,19 @@ def extract_ligand_models(model,ligand_selection=None):
   return ligand_models
 
 class LigandsCC:
+  """
+  A class to extract ligands from an iotbx.map_model_manager object.
+
+  Vars
+  ----
+  map_model_manager : the parent map_model_manager
+  resolution : resolution of the parent map
+  ccmask_full_model : the ccmask of the full map/model
+  ligand_map_model_managers : a list of ligand map_model_managers
+  ccmask_ligands : a list of ccmask values for each ligand
+
+
+  """
 
   @staticmethod
   def ligand_id_tuple(ligand_model):
@@ -145,9 +165,9 @@ class LigandsCC:
   def __init__(self,map_model_manager,resolution):
     self.map_model_manager = map_model_manager
     self.resolution = resolution
+    self.ccmask_full_model = None         # populated upon self.validate()
     self.ligand_map_model_managers = None # populated on self.process_ligands()
     self.ccmask_ligands = None            # populated on self.process_ligands()
-    self.ccmask_full_model = None         # populated upon self.validate()
 
   def validate(self):
     self.ccmask_full_model = self.map_model_manager.map_model_cc(
