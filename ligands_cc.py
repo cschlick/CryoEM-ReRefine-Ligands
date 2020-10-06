@@ -63,11 +63,10 @@ class LigandSelection:
     include_residue_classes = self.include_residue_classes
     exclude_residue_classes = self.exclude_residue_classes
 
+    retvalue = False
     if include_only_resnames is not None:
       if resname in include_only_resnames:
-        return True
-      else:
-        return False
+        retvalue =  True
     else:
       residue_class_name = common_residue_names_get_class(name=resname)
 
@@ -83,7 +82,6 @@ class LigandSelection:
 
       # if a resname or residue_class is explicitly included,
       # it is selected even if it is on the disallowed list
-      retvalue = False
       if residue_class_name in disallowed_residue_classes:
         if include_residue_classes is not None:
           if residue_class_name in include_residue_classes:
